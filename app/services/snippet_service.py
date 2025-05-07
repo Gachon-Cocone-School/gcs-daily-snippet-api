@@ -55,7 +55,7 @@ def get_snippets(
             teamName=team_name,  # Use the original team_name from request
             date=snippet_data.get('date', ''),
             userName=display_name,
-            snippet=snippet_data.get('content', '')
+            snippet=snippet_data.get('snippet', '')
         )
         result.append(snippet_response)
     
