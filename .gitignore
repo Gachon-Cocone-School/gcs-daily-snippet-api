@@ -35,3 +35,7 @@ serviceAccountKey.json
 *.swp
 *.swo
 .DS_Store
+
+# Sensitive files
+scripts/team-info.yaml
+scripts/6기-emails.txt
