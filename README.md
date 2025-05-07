@@ -27,7 +27,7 @@ A FastAPI application for retrieving team snippets with various filtering option
 1. 저장소 클론 (Clone the repository)
 
 ```bash
-git clone https://github.com/Gachon-Cocone-School/gcs-daily-api
+git clone https://github.com/Gachon-Cocone-School/gcs-daily-snippet-api
 cd gcs-daily-api
 ```
 
