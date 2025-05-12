@@ -10,7 +10,7 @@ router = APIRouter()
 
 @router.get("/snippets", response_model=SnippetsResponse, summary="Get snippets by filters")
 async def get_snippets_endpoint(
-    team_name: str = Query(..., description="Team name or alias"),
+    team_name: Optional[str] = Query(None, description="Team name or alias"),
     date_from: Optional[str] = Query(None, description="Start date in YYYY-MM-DD format"),
     date_to: Optional[str] = Query(None, description="End date in YYYY-MM-DD format"),
     user_name: Optional[str] = Query(None, description="User name to filter by")
@@ -18,7 +18,7 @@ async def get_snippets_endpoint(
     """
     Get snippets based on the provided filters:
     
-    - **team_name**: Team name or alias (required)
+    - **team_name**: Team name or alias (optional)
     - **date_from**: Start date in YYYY-MM-DD format (optional, defaults to 2000-01-01)
     - **date_to**: End date in YYYY-MM-DD format (optional, defaults to today)
     - **user_name**: User name to filter by (optional)
