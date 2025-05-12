@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List, Optional
 
 def get_snippets(
-    team_name: str,
+    team_name: Optional[str] = None,
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     user_name: Optional[str] = None
@@ -20,16 +20,18 @@ def get_snippets(
     if date_to is None:
         date_to = datetime.now().strftime("%Y-%m-%d")
     
-    # Verify team_name exists in team aliases
-    team_name_match = get_team_by_alias(team_name)
-    if not team_name_match:
-        return []
-    
     # Create query
     snippets_ref = db.collection('snippets')
+    query = snippets_ref
     
-    # Filter by team name
-    query = snippets_ref.where('teamName', '==', team_name_match)
+    # Filter by team name if provided
+    if team_name:
+        # Verify team_name exists in team aliases
+        team_name_match = get_team_by_alias(team_name)
+        if not team_name_match:
+            return []
+        # Filter by team name
+        query = query.where('teamName', '==', team_name_match)
     
     # Filter by date range
     query = query.where('date', '>=', date_from).where('date', '<=', date_to)
