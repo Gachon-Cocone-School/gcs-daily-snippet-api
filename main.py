@@ -4,13 +4,11 @@ import uvicorn
 import os
 from contextlib import asynccontextmanager
 from app.api.api import api_router
-from app.db.firebase import initialize_cache
 
 # Define lifespan event handler
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: initialize cache
-    initialize_cache()
+    # Startup
     yield
     # Shutdown: cleanup if needed
     # No cleanup needed for now
