@@ -8,7 +8,10 @@ router = APIRouter()
 
 @router.post("/snippets/", response_model=Snippet)
 async def create_snippet(snippet: SnippetCreate):
-    return await SnippetService.create_snippet(snippet)
+    try:
+        return await SnippetService.create_snippet(snippet)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/snippets/", response_model=SnippetsResponse)
 async def get_snippets(
@@ -17,20 +20,13 @@ async def get_snippets(
     date_to: date = None,
     user_email: str = None
 ):
-    snippets = await SnippetService.get_snippets(
-        team_name=team_name,
-        date_from=date_from,
-        date_to=date_to,
-        user_email=user_email
-    )
-    return SnippetsResponse(snippets=snippets)
-
-@router.put("/snippets/", response_model=Snippet)
-async def update_snippet(snippet: SnippetCreate):
-    return await SnippetService.update_snippet(snippet)
-
-@router.delete("/snippets/{user_email}/{snippet_date}")
-async def delete_snippet(user_email: str, snippet_date: date):
-    result = await SnippetService.delete_snippet(user_email, snippet_date)
-    if not result:
-        raise HTTPException(status_code=404, detail="Snippet not found")
+    try:
+        snippets = await SnippetService.get_snippets(
+            team_name=team_name,
+            date_from=date_from,
+            date_to=date_to,
+            user_email=user_email
+        )
+        return SnippetsResponse(snippets=snippets)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))

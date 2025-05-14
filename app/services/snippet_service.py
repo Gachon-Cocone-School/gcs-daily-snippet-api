@@ -1,20 +1,42 @@
-from datetime import date, datetime
+from datetime import date
 from typing import List, Optional
 from app.db.supabase import supabase
-from app.schemas.snippet import SnippetCreate, Snippet, SnippetBase
+from app.schemas.snippet import SnippetCreate, Snippet, SnippetExpanded
+from postgrest import APIError
 
 class SnippetService:
     @staticmethod
     async def create_snippet(snippet: SnippetCreate) -> Snippet:
+        # First, get team info from teams table using api_id
+        team_result = supabase.table("teams").select("team_name,emails").eq("api_id", snippet.api_id).execute()
+        
+        if not team_result.data:
+            raise ValueError(f"Invalid api_id: {snippet.api_id}")
+
+        team = team_result.data[0]
+        team_name = team["team_name"]
+        
+        # Check if user_email is in the team's emails list
+        if snippet.user_email not in team["emails"]:
+            raise ValueError(f"User {snippet.user_email} is not a member of team")
+        
         data = {
             "user_email": snippet.user_email,
-            "team_name": snippet.team_name,
+            "team_name": team_name,
             "snippet_date": snippet.snippet_date.isoformat(),
             "content": snippet.content
         }
         
-        result = supabase.table("snippets").insert(data).execute()
-        return Snippet(**result.data[0])
+        try:
+            result = supabase.table("snippets").insert(data).execute()
+            return Snippet(**result.data[0])
+        except APIError as e:
+            error_data = e.json()  # APIError의 JSON 데이터를 가져옴
+            if error_data.get('code') == '23505':  # PostgreSQL unique violation error code
+                raise ValueError(f"Snippet already exists for user {snippet.user_email} on date {snippet.snippet_date}")
+            raise ValueError(f"Database error: {error_data.get('message', str(e))}")
+        except Exception as e:
+            raise ValueError(f"Unexpected error: {str(e)}")
 
     @staticmethod
     async def get_snippets(
@@ -22,11 +44,11 @@ class SnippetService:
         date_from: Optional[date] = None,
         date_to: Optional[date] = None,
         user_email: Optional[str] = None
-    ) -> List[Snippet]:
-        query = supabase.table("snippets").select("*")
+    ) -> List[SnippetExpanded]:
+        query = supabase.table("snippets_expanded").select("*")
 
         if team_name:
-            query = query.eq("team_name", team_name)
+            query = query.cs("team_alias", [team_name])
         if date_from:
             query = query.gte("snippet_date", date_from.isoformat())
         if date_to:
@@ -34,32 +56,9 @@ class SnippetService:
         if user_email:
             query = query.eq("user_email", user_email)
 
-        result = query.execute()
-        return [Snippet(**item) for item in result.data]
+        try:
+            result = query.execute()
+            return [SnippetExpanded(**item) for item in result.data]
+        except Exception as e:
+            raise ValueError(f"Error fetching snippets: {str(e)}")
 
-    @staticmethod
-    async def update_snippet(snippet: SnippetCreate) -> Snippet:
-        data = {
-            "user_email": snippet.user_email,
-            "team_name": snippet.team_name,
-            "snippet_date": snippet.snippet_date.isoformat(),
-            "content": snippet.content
-        }
-        
-        result = supabase.table("snippets")\
-            .update(data)\
-            .eq("user_email", snippet.user_email)\
-            .eq("snippet_date", snippet.snippet_date.isoformat())\
-            .execute()
-            
-        return Snippet(**result.data[0])
-
-    @staticmethod
-    async def delete_snippet(user_email: str, snippet_date: date) -> bool:
-        result = supabase.table("snippets")\
-            .delete()\
-            .eq("user_email", user_email)\
-            .eq("snippet_date", snippet_date.isoformat())\
-            .execute()
-            
-        return len(result.data) > 0
