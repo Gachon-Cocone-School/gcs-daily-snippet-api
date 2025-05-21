@@ -61,4 +61,26 @@ class SnippetService:
             return [SnippetExpanded(**item) for item in result.data]
         except Exception as e:
             raise ValueError(f"Error fetching snippets: {str(e)}")
+            
+    @staticmethod
+    async def get_team_snippets(
+        api_id: str,
+        date_from: Optional[date] = None,
+        date_to: Optional[date] = None
+    ) -> List[SnippetExpanded]:
+        # First, get team info from teams table using api_id
+        team_result = supabase.table("teams").select("team_alias").eq("api_id", api_id).execute()
+        
+        if not team_result.data:
+            raise ValueError(f"Invalid api_id: {api_id}")
+
+        team = team_result.data[0]
+        team_name = team["team_alias"][-1]
+        
+        # Now get snippets for this team
+        return await SnippetService.get_snippets(
+            team_name=team_name,
+            date_from=date_from,
+            date_to=date_to
+        )
 

@@ -30,3 +30,19 @@ async def get_snippets(
         return SnippetsResponse(snippets=snippets)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/team-snippets/", response_model=SnippetsResponse)
+async def get_team_snippets(
+    api_id: str,
+    date_from: date = None,
+    date_to: date = None
+):
+    try:
+        snippets = await SnippetService.get_team_snippets(
+            api_id=api_id,
+            date_from=date_from,
+            date_to=date_to
+        )
+        return SnippetsResponse(snippets=snippets)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
